@@ -13,15 +13,14 @@ class CppAuc:
                                              ctypes.c_size_t
                                              ]
         self._handle.cpp_auc_ext.restype = ctypes.c_float
-    
+
     def roc_auc_score(self, y_true: np.array, y_score: np.array) -> float:
         n = len(y_true)
         result = self._handle.cpp_auc_ext(y_score, y_true, n)
         return result
-    
+
     def roc_auc_score_batch(self, y_true: np.array, y_score: np.array) -> np.array:
-        n = len(y_true)
-        result = self._handle.cpp_auc_ext(y_score, y_true, n)
+        raise NotImplemented
         return np.array(result)
 
 
