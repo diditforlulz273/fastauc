@@ -1,10 +1,14 @@
 import ctypes
 import os
+from typing import Union
 import numpy as np
 from numpy.ctypeslib import ndpointer
 
 
 class CppAuc:
+    """A python wrapper class for a C++ library, used to load it once and make fast calls after.
+    NB be aware of data types accepted, see method docstrings. 
+    """
 
     def __init__(self):
         self._handle = ctypes.CDLL(os.path.dirname(os.path.realpath(__file__)) + "/cpp_auc.so")
@@ -15,6 +19,15 @@ class CppAuc:
         self._handle.cpp_auc_ext.restype = ctypes.c_float
 
     def roc_auc_score(self, y_true: np.array, y_score: np.array) -> float:
+        """a method to calculate AUC via C++ lib.
+
+        Args:
+            y_true (np.array): 1D numpy array of dtype=np.bool8 as true labels.
+            y_score (np.array): 1D numpy array of dtype=np.float32 as probability predictions.
+
+        Returns:
+            float: AUC score
+        """
         n = len(y_true)
         result = self._handle.cpp_auc_ext(y_score, y_true, n)
         return result
@@ -24,8 +37,16 @@ class CppAuc:
         return np.array(result)
 
 
-def fast_auc(y_true: np.array, y_prob: np.array) -> float:
+def fast_auc(y_true: np.array, y_prob: np.array) -> Union[float, str]:
+    """a function to calculate AUC via python.
 
+    Args:
+        y_true (np.array): 1D numpy array as true labels.
+        y_score (np.array): 1D numpy array as probability predictions.
+
+    Returns:
+        float or str: AUC score or 'error' if imposiible to calculate
+    """
     # binary clf curve
     y_true = (y_true == 1)
 
