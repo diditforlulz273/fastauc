@@ -3,6 +3,7 @@ import os
 from typing import Union
 import numpy as np
 from numpy.ctypeslib import ndpointer
+import numba
 
 
 class CppAuc:
@@ -36,6 +37,36 @@ class CppAuc:
         raise NotImplemented
         return np.array(result)
 
+@numba.njit
+def trapezoid_area(x1,x2,y1,y2):
+    dx = x2-x1
+    dy = y2-y1
+    return dx*y1+dy*dx/2.0
+
+@numba.njit
+def fast_numba_auc(y_true: np.array, y_prob: np.array):
+    y_true = (y_true == 1)
+
+    desc_score_indices = np.argsort(y_prob, kind="mergesort")[::-1]
+    y_score = y_prob[desc_score_indices]
+    y_true = y_true[desc_score_indices]
+
+    prev_fps = 0
+    prev_tps = 0
+    last_counted_fps = 0
+    last_counted_tps = 0
+    auc=0.0
+    for i in range(len(y_true)):
+        tps = prev_tps + y_true[i]
+        fps = prev_fps + (1-y_true[i])
+        if i==len(y_true)-1 or y_score[i+1]!=y_score[i]:
+            auc += trapezoid_area(last_counted_fps,fps,last_counted_tps,tps)
+            last_counted_fps = fps
+            last_counted_tps = tps
+        prev_tps = tps
+        prev_fps = fps
+    return auc/(prev_tps*prev_fps)
+
 
 def fast_auc(y_true: np.array, y_prob: np.array) -> Union[float, str]:
     """a function to calculate AUC via python.
@@ -59,7 +90,6 @@ def fast_auc(y_true: np.array, y_prob: np.array) -> Union[float, str]:
 
     tps = np.cumsum(y_true)[threshold_idxs]
     fps = 1 + threshold_idxs - tps
-    thresholds = y_score[threshold_idxs]
 
     if len(fps) > 2:
         optimal_idxs = np.where(np.r_[True,
@@ -68,12 +98,10 @@ def fast_auc(y_true: np.array, y_prob: np.array) -> Union[float, str]:
                                       True])[0]
         fps = fps[optimal_idxs]
         tps = tps[optimal_idxs]
-        thresholds = thresholds[optimal_idxs]
 
     # roc
     tps = np.r_[0, tps]
     fps = np.r_[0, fps]
-    thresholds = np.r_[thresholds[0] + 1, thresholds]
 
     if fps[-1] <= 0:
         fpr = np.repeat(np.nan, fps.shape)

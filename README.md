@@ -1,10 +1,12 @@
 # fastauc
 
-Two fast AUC calculation implementations for python:
+Three fast AUC calculation implementations for python:
 
 python-based is approximately 5X faster than the default sklearn.metrics.roc_auc_score()
 
-C++/ctypes based is approximately 22X faster than the default sklearn.metrics.roc_auc_score()
+Python numba based is approximately 28X faster than the default sklearn.metrics.roc_auc_score()
+
+C++/ctypes based is approximately 27X faster than the default sklearn.metrics.roc_auc_score()
 
 ![speedup](speedup.png)
 
