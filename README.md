@@ -6,7 +6,7 @@ python-based is approximately 5X faster than the default sklearn.metrics.roc_auc
 
 Python numba based is approximately 28X faster than the default sklearn.metrics.roc_auc_score()
 
-C++/ctypes based is approximately 27X faster than the default sklearn.metrics.roc_auc_score()
+C++/ctypes based is approximately 28X faster than the default sklearn.metrics.roc_auc_score()
 
 ![speedup](speedup.png)
 

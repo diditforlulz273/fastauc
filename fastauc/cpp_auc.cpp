@@ -9,9 +9,9 @@
 // corresponding elements of a and b. (This assumes 
 // that the vectors have equal length)
 void zip(
-    const std::vector<bool> &a, 
+    const std::vector<char> &a, 
     const std::vector<float> &b, 
-    std::vector<std::pair<bool,float>> &zipped)
+    std::vector<std::pair<char,float>> &zipped)
 {
     for(size_t i=0; i<a.size(); ++i)
     {
@@ -28,7 +28,7 @@ double trapezoid_area(double x1,double x2,double y1,double y2){
 float auc_kernel(float* ts, bool* st, size_t len) {
 
   std::vector <float> test;   
-  std::vector <bool> status;                  
+  std::vector <char> status;                  
 
   // convert C-style arrays to C++ vectors
   test.assign(ts, ts + len);
@@ -36,7 +36,7 @@ float auc_kernel(float* ts, bool* st, size_t len) {
 
   // sort the data
   // Zip the vectors together
-  std::vector<std::pair<bool,float>> zipped;
+  std::vector<std::pair<char,float>> zipped;
   zipped.reserve(len);
   zip(status, test, zipped);
 
