@@ -95,25 +95,18 @@ def fast_auc(y_true: np.array, y_prob: np.array) -> Union[float, str]:
     tps = np.r_[0, tps]
     fps = np.r_[0, fps]
 
-    if fps[-1] <= 0:
-        fpr = np.repeat(np.nan, fps.shape)
-    else:
-        fpr = fps / fps[-1]
-
-    if tps[-1] <= 0:
-        tpr = np.repeat(np.nan, tps.shape)
-    else:
-        tpr = tps / tps[-1]
+    if fps[-1] <= 0 or tps[-1] <= 0:
+        return np.nan
 
     # auc
     direction = 1
-    dx = np.diff(fpr)
+    dx = np.diff(fps)
     if np.any(dx < 0):
         if np.all(dx <= 0):
             direction = -1
         else:
             return 'error'
 
-    area = direction * np.trapz(tpr, fpr)
+    area = direction * np.trapz(tps, fps)/(tps[-1]*fps[-1])
 
     return area
