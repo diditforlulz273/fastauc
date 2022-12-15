@@ -91,14 +91,6 @@ def fast_auc(y_true: np.array, y_prob: np.array) -> Union[float, str]:
     tps = np.cumsum(y_true)[threshold_idxs]
     fps = 1 + threshold_idxs - tps
 
-    if len(fps) > 2:
-        optimal_idxs = np.where(np.r_[True,
-                                      np.logical_or(np.diff(fps, 2),
-                                                    np.diff(tps, 2)),
-                                      True])[0]
-        fps = fps[optimal_idxs]
-        tps = tps[optimal_idxs]
-
     # roc
     tps = np.r_[0, tps]
     fps = np.r_[0, fps]
