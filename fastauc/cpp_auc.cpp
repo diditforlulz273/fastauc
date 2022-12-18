@@ -20,10 +20,10 @@ void zip(
     }
 }
 
-double trapezoid_area(double x1,double x2,double y1,double y2){
-  double dx = x2-x1;
-  double dy = y2-y1;
-  return dx*y1+dy*dx/2.0;
+double trapezoid_area(double x1, double x2, double y1, double y2) {
+  double dx = x2 - x1;
+  double dy = y2 - y1;
+  return dx * y1 + dy * dx / 2.0;
 }
 
 float auc_kernel(float* ts, bool* st, size_t len) {
@@ -45,18 +45,18 @@ float auc_kernel(float* ts, bool* st, size_t len) {
   double last_counted_fps = 0;
   double last_counted_tps = 0;
   double auc = 0.0;
-  for(size_t i=0;i<zipped.size();++i){
+  for(size_t i=0; i<zipped.size(); ++i) {
     const double tps = prev_tps + zipped[i].first;
-    const double fps = prev_fps + (1-zipped[i].first);
-    if( (i==zipped.size()-1) || (zipped[i+1].second!=zipped[i].second) ){
-        auc += trapezoid_area(last_counted_fps,fps,last_counted_tps,tps);
+    const double fps = prev_fps + (1 - zipped[i].first);
+    if( (i == zipped.size() - 1) || (zipped[i+1].second != zipped[i].second) ) {
+        auc += trapezoid_area(last_counted_fps, fps, last_counted_tps, tps);
         last_counted_fps = fps;
         last_counted_tps = tps;
     }
     prev_tps = tps;
     prev_fps = fps;
   }
-  return auc/(prev_tps*prev_fps);
+  return auc / (prev_tps * prev_fps);
 }
 
 extern "C" {

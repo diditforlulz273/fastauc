@@ -38,10 +38,10 @@ class CppAuc:
         return np.array(result)
 
 @numba.njit
-def trapezoid_area(x1,x2,y1,y2):
-    dx = x2-x1
-    dy = y2-y1
-    return dx*y1+dy*dx/2.0
+def trapezoid_area(x1, x2, y1, y2):
+    dx = x2 - x1
+    dy = y2 - y1
+    return dx * y1 + dy * dx / 2.0
 
 @numba.njit
 def fast_numba_auc(y_true: np.array, y_prob: np.array):
@@ -55,17 +55,17 @@ def fast_numba_auc(y_true: np.array, y_prob: np.array):
     prev_tps = 0
     last_counted_fps = 0
     last_counted_tps = 0
-    auc=0.0
+    auc = 0.0
     for i in range(len(y_true)):
         tps = prev_tps + y_true[i]
-        fps = prev_fps + (1-y_true[i])
-        if i==len(y_true)-1 or y_score[i+1]!=y_score[i]:
-            auc += trapezoid_area(last_counted_fps,fps,last_counted_tps,tps)
+        fps = prev_fps + (1 - y_true[i])
+        if i == len(y_true) - 1 or y_score[i+1] != y_score[i]:
+            auc += trapezoid_area(last_counted_fps, fps, last_counted_tps, tps)
             last_counted_fps = fps
             last_counted_tps = tps
         prev_tps = tps
         prev_fps = fps
-    return auc/(prev_tps*prev_fps)
+    return auc / (prev_tps*prev_fps)
 
 
 def fast_auc(y_true: np.array, y_prob: np.array) -> Union[float, str]:
@@ -107,6 +107,6 @@ def fast_auc(y_true: np.array, y_prob: np.array) -> Union[float, str]:
         else:
             return 'error'
 
-    area = direction * np.trapz(tps, fps)/(tps[-1]*fps[-1])
+    area = direction * np.trapz(tps, fps) / (tps[-1] * fps[-1])
 
     return area
