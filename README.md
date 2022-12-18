@@ -9,6 +9,7 @@ Python numba based is approximately 26X faster than the default sklearn.metrics.
 C++/ctypes based is approximately 37X faster than the default sklearn.metrics.roc_auc_score()
 
 10 000 AUC calculations total time:
+
 ![times](times.png)
 
 NB: run cd fastauc && ./compile.sh to create a binary before you use a C++ version.
