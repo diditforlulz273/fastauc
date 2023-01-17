@@ -71,7 +71,7 @@ def fast_numba_auc(y_true: np.array, y_prob: np.array,sample_weight=np.array([])
     return auc / (prev_tps*prev_fps)
 
 
-def fast_auc(y_true: np.array, y_prob: np.array) -> Union[float, str]:
+def fast_auc(y_true: np.array, y_prob: np.array, sample_weight=None) -> Union[float, str]:
     """a function to calculate AUC via python.
 
     Args:
@@ -87,12 +87,18 @@ def fast_auc(y_true: np.array, y_prob: np.array) -> Union[float, str]:
     desc_score_indices = np.argsort(y_prob, kind="mergesort")[::-1]
     y_score = y_prob[desc_score_indices]
     y_true = y_true[desc_score_indices]
+    if sample_weight is not None:
+        sample_weight = sample_weight[desc_score_indices]
 
     distinct_value_indices = np.where(np.diff(y_score))[0]
     threshold_idxs = np.r_[distinct_value_indices, y_true.size - 1]
 
-    tps = np.cumsum(y_true)[threshold_idxs]
-    fps = 1 + threshold_idxs - tps
+    if sample_weight is not None:
+        tps = np.cumsum(y_true*sample_weight)[threshold_idxs]
+        fps = np.cumsum((1 - y_true) * sample_weight)[threshold_idxs]
+    else:
+        tps = np.cumsum(y_true)[threshold_idxs]
+        fps = 1 + threshold_idxs - tps
 
     # roc
     tps = np.r_[0, tps]
