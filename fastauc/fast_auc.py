@@ -44,12 +44,14 @@ def trapezoid_area(x1, x2, y1, y2):
     return dx * y1 + dy * dx / 2.0
 
 @numba.njit
-def fast_numba_auc(y_true: np.array, y_prob: np.array):
+def fast_numba_auc(y_true: np.array, y_prob: np.array,sample_weight=np.array([])):
     y_true = (y_true == 1)
 
     desc_score_indices = np.argsort(y_prob, kind="mergesort")[::-1]
     y_score = y_prob[desc_score_indices]
     y_true = y_true[desc_score_indices]
+    if len(sample_weight)>0:
+        sample_weight = sample_weight[desc_score_indices]
 
     prev_fps = 0
     prev_tps = 0
@@ -57,8 +59,9 @@ def fast_numba_auc(y_true: np.array, y_prob: np.array):
     last_counted_tps = 0
     auc = 0.0
     for i in range(len(y_true)):
-        tps = prev_tps + y_true[i]
-        fps = prev_fps + (1 - y_true[i])
+        weight = (sample_weight[i] if len(sample_weight)>0 else 1.0)
+        tps = prev_tps + y_true[i]*weight
+        fps = prev_fps + (1 - y_true[i])*weight
         if i == len(y_true) - 1 or y_score[i+1] != y_score[i]:
             auc += trapezoid_area(last_counted_fps, fps, last_counted_tps, tps)
             last_counted_fps = fps
