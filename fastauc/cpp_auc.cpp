@@ -17,7 +17,7 @@ template<typename tuple_type> void zip(
 {
     for(size_t i=0; i<len; ++i)
     {
-        if constexpr(std::is_same<tuple_type,std::tuple<bool,float,float>>::value){
+        if constexpr(std::is_same<tuple_type, std::tuple<bool, float, float>>::value){
             zipped.push_back(std::make_tuple(a[i], b[i], sample_weight[i]));
         }
         else{
@@ -32,7 +32,7 @@ double trapezoid_area(double x1, double x2, double y1, double y2) {
   return dx * y1 + dy * dx / 2.0;
 }
 
-template<typename tuple_type> float auc_kernel(float* ts, bool* st, size_t len,float* sample_weight) {
+template<typename tuple_type> float auc_kernel(float* ts, bool* st, size_t len, float* sample_weight) {
   // sort the data
   // Zip the vectors together
   std::vector<tuple_type> zipped;
@@ -52,7 +52,7 @@ template<typename tuple_type> float auc_kernel(float* ts, bool* st, size_t len,f
   double last_counted_tps = 0;
   double auc = 0.0;
   for(size_t i=0; i<zipped.size(); ++i) {
-    if constexpr(std::is_same<tuple_type,std::tuple<bool,float,float>>::value){
+    if constexpr(std::is_same<tuple_type, std::tuple<bool, float, float>>::value){
         tps += std::get<0>(zipped[i]) * std::get<2>(zipped[i]);
         fps += (1 - std::get<0>(zipped[i])) * std::get<2>(zipped[i]);
     }
@@ -70,12 +70,12 @@ template<typename tuple_type> float auc_kernel(float* ts, bool* st, size_t len,f
 }
 
 extern "C" {
-    float cpp_auc_ext(float* ts, bool* st, size_t len, float* sample_weight,size_t n_sample_weights) {
-        if(n_sample_weights>0){
-            return auc_kernel<std::tuple<bool,float,float>>(ts, st, len, sample_weight);
+    float cpp_auc_ext(float* ts, bool* st, size_t len, float* sample_weight, size_t n_sample_weights) {
+        if(n_sample_weights > 0){
+            return auc_kernel<std::tuple<bool, float, float>>(ts, st, len, sample_weight);
         }
         else{
-            return auc_kernel<std::tuple<bool,float>>(ts, st, len, sample_weight);
+            return auc_kernel<std::tuple<bool, float>>(ts, st, len, sample_weight);
         }
     }
 }

@@ -16,11 +16,12 @@ class CppAuc:
         self._handle.cpp_auc_ext.argtypes = [ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
                                              ndpointer(ctypes.c_bool, flags="C_CONTIGUOUS"),
                                              ctypes.c_size_t,
-                                             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS")
+                                             ndpointer(ctypes.c_float, flags="C_CONTIGUOUS"),
+                                             ctypes.c_size_t
                                              ]
         self._handle.cpp_auc_ext.restype = ctypes.c_float
 
-    def roc_auc_score(self, y_true: np.array, y_score: np.array, sample_weight=np.array([],dtype=np.float32)) -> float:
+    def roc_auc_score(self, y_true: np.array, y_score: np.array, sample_weight=None) -> float:
         """a method to calculate AUC via C++ lib.
 
         Args:
@@ -32,7 +33,8 @@ class CppAuc:
             float: AUC score
         """
         n = len(y_true)
-        n_sample_weights = len(sample_weight)
+        n_sample_weights = len(sample_weight) if sample_weight is not None else 0
+        sample_weight = sample_weight if sample_weight is not None else np.array([],dtype=np.float32)
         result = self._handle.cpp_auc_ext(y_score, y_true, n, sample_weight, n_sample_weights)
         return result
 
@@ -46,8 +48,12 @@ def trapezoid_area(x1, x2, y1, y2):
     dy = y2 - y1
     return dx * y1 + dy * dx / 2.0
 
+def fast_numba_auc(y_true: np.array, y_prob: np.array, sample_weight=None):
+    return fast_numba_auc_kernel(y_true,y_prob,sample_weight if sample_weight is not None else np.array([]))
+
+
 @numba.njit
-def fast_numba_auc(y_true: np.array, y_prob: np.array, sample_weight: np.array=np.array([])):
+def fast_numba_auc_kernel(y_true: np.array, y_prob: np.array, sample_weight: np.array):
     y_true = (y_true == 1)
 
     desc_score_indices = np.argsort(y_prob, kind="mergesort")[::-1]
@@ -74,7 +80,7 @@ def fast_numba_auc(y_true: np.array, y_prob: np.array, sample_weight: np.array=n
     return auc / (prev_tps*prev_fps)
 
 
-def fast_auc(y_true: np.array, y_prob: np.array, sample_weight: np.array=np.array([])) -> Union[float, str]:
+def fast_auc(y_true: np.array, y_prob: np.array, sample_weight=None) -> Union[float, str]:
     """a function to calculate AUC via python.
 
     Args:
@@ -91,13 +97,13 @@ def fast_auc(y_true: np.array, y_prob: np.array, sample_weight: np.array=np.arra
     desc_score_indices = np.argsort(y_prob, kind="mergesort")[::-1]
     y_score = y_prob[desc_score_indices]
     y_true = y_true[desc_score_indices]
-    if len(sample_weight) > 0:
+    if sample_weight is not None:
         sample_weight = sample_weight[desc_score_indices]
 
     distinct_value_indices = np.where(np.diff(y_score))[0]
     threshold_idxs = np.r_[distinct_value_indices, y_true.size - 1]
 
-    if len(sample_weight) > 0:
+    if sample_weight is not None:
         tps = np.cumsum(y_true * sample_weight)[threshold_idxs]
         fps = np.cumsum((1 - y_true) * sample_weight)[threshold_idxs]
     else:
