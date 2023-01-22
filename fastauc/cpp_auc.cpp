@@ -1,24 +1,30 @@
-
 #include <vector>
 #include <iostream>
 #include <algorithm>
-#include <iterator>
+#include <tuple>
+#include <type_traits>
 
 
 // Fill the zipped vector with pairs consisting of the
 // corresponding elements of a and b. (This assumes 
 // that the vectors have equal length)
-void zip(
+template <typename tuple_type> void zip(
     const bool* a, 
     const float* b,
+    const float* sample_weight,
     const size_t len, 
-    std::vector<std::pair<bool,float>> &zipped)
-{
-    for(size_t i=0; i<len; ++i)
+    std::vector<tuple_type> &zipped)
     {
-        zipped.push_back(std::make_pair(a[i], b[i]));
+        for(size_t i=0; i<len; ++i)
+        {
+            if constexpr(std::is_same<tuple_type, std::tuple<bool, float, float>>::value) {
+                zipped.push_back(std::make_tuple(a[i], b[i], sample_weight[i]));
+            }
+            else {
+                zipped.push_back(std::make_tuple(a[i], b[i]));
+            }
+        }
     }
-}
 
 double trapezoid_area(double x1, double x2, double y1, double y2) {
   double dx = x2 - x1;
@@ -26,42 +32,50 @@ double trapezoid_area(double x1, double x2, double y1, double y2) {
   return dx * y1 + dy * dx / 2.0;
 }
 
-float auc_kernel(float* ts, bool* st, size_t len) {
+template <typename tuple_type> float auc_kernel(float* ts, bool* st, size_t len, float* sample_weight) {
   // sort the data
   // Zip the vectors together
-  std::vector<std::pair<bool,float>> zipped;
+  std::vector<tuple_type> zipped;
   zipped.reserve(len);
-  zip(st, ts, len, zipped);
+  zip<tuple_type>(st, ts, sample_weight, len, zipped);
 
   // Sort the vector of pairs
   std::sort(std::begin(zipped), std::end(zipped), 
     [&](const auto& a, const auto& b)
     {
-        return a.second > b.second;
+        return std::get<1>(a) > std::get<1>(b);
     });
 
-  double prev_fps = 0;
-  double prev_tps = 0;
+  double fps = 0;
+  double tps = 0;
   double last_counted_fps = 0;
   double last_counted_tps = 0;
-  double auc = 0.0;
-  for(size_t i=0; i<zipped.size(); ++i) {
-    const double tps = prev_tps + zipped[i].first;
-    const double fps = prev_fps + (1 - zipped[i].first);
-    if( (i == zipped.size() - 1) || (zipped[i+1].second != zipped[i].second) ) {
+  double auc = 0;
+  for (size_t i=0; i < zipped.size(); ++i) {
+    if constexpr(std::is_same<tuple_type, std::tuple<bool, float, float>>::value) {
+        tps += std::get<0>(zipped[i]) * std::get<2>(zipped[i]);
+        fps += (1 - std::get<0>(zipped[i])) * std::get<2>(zipped[i]);
+    }
+    else {
+        tps += std::get<0>(zipped[i]);
+        fps += (1 - std::get<0>(zipped[i]));
+    }
+    if ((i == zipped.size() - 1) || (std::get<1>(zipped[i+1]) != std::get<1>(zipped[i]))) {
         auc += trapezoid_area(last_counted_fps, fps, last_counted_tps, tps);
         last_counted_fps = fps;
         last_counted_tps = tps;
     }
-    prev_tps = tps;
-    prev_fps = fps;
   }
-  return auc / (prev_tps * prev_fps);
+  return auc / (tps * fps);
 }
 
 extern "C" {
-    float cpp_auc_ext(float* ts, bool* st, size_t len) {
-        return auc_kernel(ts, st, len);
+    float cpp_auc_ext(float* ts, bool* st, size_t len, float* sample_weight, size_t n_sample_weights) {
+        if(n_sample_weights > 0) {
+            return auc_kernel<std::tuple<bool, float, float>>(ts, st, len, sample_weight);
+        }
+        else {
+            return auc_kernel<std::tuple<bool, float>>(ts, st, len, sample_weight);
+        }
     }
-
 }
