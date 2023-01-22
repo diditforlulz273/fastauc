@@ -34,7 +34,8 @@ class CppAuc:
         """
         n = len(y_true)
         n_sample_weights = len(sample_weight) if sample_weight is not None else 0
-        sample_weight = sample_weight if sample_weight is not None else np.array([],dtype=np.float32)
+        if sample_weight is None:
+            sample_weight = np.array([],dtype=np.float32)
         result = self._handle.cpp_auc_ext(y_score, y_true, n, sample_weight, n_sample_weights)
         return result
 
