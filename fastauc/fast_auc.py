@@ -54,9 +54,15 @@ def fast_numba_auc(y_true: np.array, y_score: np.array, sample_weight: np.array=
     Returns:
         AUC score as float
     """
+
+    desc_score_indices = np.argsort(y_score)[::-1]
+    y_score = y_score[desc_score_indices]
+    y_true = y_true[desc_score_indices]
+
     if sample_weight is None:
         return fast_numba_auc_nonw(y_true=y_true, y_score=y_score)
     else:
+        sample_weight = sample_weight[desc_score_indices]        
         return fast_numba_auc_w(y_true=y_true, y_score=y_score, sample_weight=sample_weight)
 
 
@@ -70,10 +76,6 @@ def trapezoid_area(x1: float, x2: float, y1: float, y2: float) -> float:
 @numba.njit
 def fast_numba_auc_nonw(y_true: np.array, y_score: np.array) -> float:
     y_true = (y_true == 1)
-
-    desc_score_indices = np.argsort(y_score, kind="mergesort")[::-1]
-    y_score = y_score[desc_score_indices]
-    y_true = y_true[desc_score_indices]
 
     prev_fps = 0
     prev_tps = 0
@@ -94,11 +96,6 @@ def fast_numba_auc_nonw(y_true: np.array, y_score: np.array) -> float:
 @numba.njit
 def fast_numba_auc_w(y_true: np.array, y_score: np.array, sample_weight: np.array) -> float:
     y_true = (y_true == 1)
-
-    desc_score_indices = np.argsort(y_score, kind="mergesort")[::-1]
-    y_score = y_score[desc_score_indices]
-    y_true = y_true[desc_score_indices]
-    sample_weight = sample_weight[desc_score_indices]
 
     prev_fps = 0
     prev_tps = 0
